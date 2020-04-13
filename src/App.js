@@ -25,7 +25,15 @@ import makeBlockie from "ethereum-blockies-base64";
 import {shortenEthAddr} from "./libs/3box-comments-react/src/utils";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import {latest} from "mapbox-gl/dist/style-spec/index.es";
-import {DeployerAddress, getDeployerContract, getEvents, initWearerKickback, openBox, openSpace} from "./libs/living";
+import {
+  DeployerAddress,
+  getDeployerContract,
+  getEvents,
+  initMoloch,
+  initWearerKickback, MolochAddress,
+  openBox,
+  openSpace
+} from "./libs/living";
 import Living from "./components/Living";
 const Web3 = require('web3')
 
@@ -51,10 +59,13 @@ function App(props) {
   const eventChats = async () => {
     const web3 = new Web3(window.web3.currentProvider || 'https://mainnet.infura.io/v3/f1c6706dd83740aba51f22b053cb6759');
     setWeb3(web3);
-    const contract = DeployerAddress[0];
+
+    const molochContractAddress = MolochAddress["0"]
+    const deployerContractAddress = DeployerAddress[0];
     const name = 'local/living';
 
-    const configurator = initWearerKickback(web3, contract, name);
+    // const configurator = initMoloch(web3, molochContractAddress, name);
+    const configurator = initWearerKickback(web3, deployerContractAddress, name);
     setConfig(configurator);
 
     const events = await getEvents(configurator, 4);

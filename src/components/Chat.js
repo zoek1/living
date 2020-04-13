@@ -55,7 +55,7 @@ class Chat extends Component {
       config
     } = this.props;
     const thread = this.props.location.state.thread
-    if (!web3 || !address || !thread.abi) return;
+    if (!web3 || !address || !config) return;
     console.log(this.props)
 
     const eventContract = config.eventContract(thread.address);
@@ -74,7 +74,7 @@ class Chat extends Component {
       config,
     } = this.props;
     const thread = this.props.location.state.thread
-    if (config) return;
+    if (!web3 || !address || !config) return;
     console.log(this.props)
 
     const eventContract = config.eventContract(thread.address);

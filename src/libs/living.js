@@ -5,6 +5,7 @@ import Box from '3box';
 
 const DeployerJSON =  require('../abis/Deployer.json');
 const PartyJSON = require('../abis/Party.json');
+const MolochJSON = require('../abis/Moloch.json');
 
 export const getUniqueAddress = async (thread) => {
   const posts = await thread.getPosts();
@@ -50,11 +51,19 @@ export const getPartyContract = (web3, address) => {
   return new web3.eth.Contract(PartyJSON, address)
 }
 
+export const getMolochContract = (web3, address) => {
+  return new web3.eth.Contract(MolochJSON, address)
+}
+
 export const DeployerAddress  =  {
   "0": "0x3361aa92E426E052141Daf9e41A09d36e994Ba23",
   "3": "0xA7514DFD86640A20eCa83a27eAD1C1213DA35f92",
   "4": "0xEA36d4e2C27f870b281E896D452ae1D9d2D32B65",
   "42": "0x9C7DbAe0A2EeF05D08E2e18Ff6173dFf7c5537eB",
+}
+
+export const MolochAddress = {
+  "0": "0x1fd169A4f5c59ACf79d0Fd5d91D1201EF1Bce9f1"
 }
 
 export const getEventInfo = async (partyAddress) =>  await fetch('https://live.api.kickback.events/graphql', {
@@ -144,6 +153,26 @@ export const getEventInfo = async (partyAddress) =>  await fetch('https://live.a
           }`})
 });
 
+
+export const getMolochInfo = async (index) => await fetch("https://api.thegraph.com/subgraphs/name/molochventures/moloch", {
+  method: "POST",
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    "query": `{ 
+      proposals(where: {id: ${index}}) {
+        id
+        timestamp
+        proposalIndex
+        startingPeriod
+        details
+      }
+    }`,
+    variables: null
+  })
+});
+
 export const populateEvents = async (event) =>  {
   console.log(event)
   const partyAddress = event.returnValues.deployedAddress;
@@ -159,6 +188,31 @@ export const populateEvents = async (event) =>  {
   }
 }
 
+export const populateProposals = async (event) => {
+  const response = event.returnValues;
+  const getInfo = await getMolochInfo(response[0]);
+  const data = await getInfo.json();
+  const details = JSON.parse(data.data.proposals[0].details)
+  const restructureInfo = {
+    id: response[0],
+    address: event.address,
+    admin: '0xed628E601012cC6Fd57Dc0cede2A527cdc86A221' //response[1]
+  }
+
+  if (typeof details == "string") {
+    restructureInfo['name'] = details
+    restructureInfo['description'] = ''
+  } else {
+    restructureInfo['name'] = details.title
+    restructureInfo['description'] = details.description
+  }
+
+  return {
+    'address': response[0],
+    'data': restructureInfo,
+  }
+}
+
 
 // Contract Specific
 export const initWearerKickback = (web3, address, spaceName) => {
@@ -169,19 +223,38 @@ export const initWearerKickback = (web3, address, spaceName) => {
     isMember: 'isRegistered',
     spaceName: spaceName,
     populate: populateEvents,
+    memberPredicate: (member) => !member
+  }
+}
+
+export const initMoloch = (web3, address, spaceName) => {
+  return {
+    mainContract:  getMolochContract(web3, address),
+    eventContract: (address) => getMolochContract(web3, address),
+    searchEvent: 'SubmitProposal',
+    isMember: 'members',
+    spaceName: spaceName,
+    populate: populateProposals,
+    memberPredicate: (member) => !member[2]
   }
 }
 
 export const getEvents = async (config, limit=0, fromBlock=0, toBlock='latest') => {
   const contract =  config.mainContract;
-  const events = await contract.getPastEvents(config.eventContract, {fromBlock: fromBlock, to: toBlock})
+  console.log(contract)
+  const events = await contract.getPastEvents(config.searchEvent, {fromBlock: fromBlock, to: toBlock})
 
   return Promise.all(events.slice(0, limit).map(config.populate))
 }
 
 
 export const isMember = async (contract, address, config) => {
-  return !(await contract.methods[config.isMember](address).call());
+  console.log(contract)
+  const response = await contract.methods[config.isMember](address).call()
+  if (config.memberPredicate) {
+    return config.memberPredicate(response)
+  }
+  return response;
 }
 
 
