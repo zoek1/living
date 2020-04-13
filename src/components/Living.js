@@ -59,6 +59,7 @@ const Living = (props) => {
     space,
     box,
     profile,
+    config,
   } = props;
 
   const goToThread = (data) => {
@@ -72,13 +73,13 @@ const Living = (props) => {
 //    try {
 
         console.log(`SUBSCRIBER: ${data.address}`)
-        const PartyContract = getPartyContract(web3, data.address)
+        const PartyContract = config.eventContract(data.address)
         const addresses = await window.ethereum.enable();
         const currentUserAddr = addresses[0];
         // contract, address, name, space, adminAddress
 
-        const thread = await joinThread(PartyContract, currentUserAddr, data.address, space, data.admin);
-        if(thread) {
+        const thread = await joinThread(PartyContract, currentUserAddr, data.address, space, data.admin, config);
+        if (thread) {
           console.log('========== Address')
           console.log(await getUniqueAddress(thread))
         }

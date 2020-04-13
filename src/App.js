@@ -25,7 +25,7 @@ import makeBlockie from "ethereum-blockies-base64";
 import {shortenEthAddr} from "./libs/3box-comments-react/src/utils";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import {latest} from "mapbox-gl/dist/style-spec/index.es";
-import {DeployerAddress, getDeployerContract, getEvents, openBox, openSpace} from "./libs/living";
+import {DeployerAddress, getDeployerContract, getEvents, initWearerKickback, openBox, openSpace} from "./libs/living";
 import Living from "./components/Living";
 const Web3 = require('web3')
 
@@ -47,15 +47,17 @@ function App(props) {
   const [isAppReady, setAppReady] = useState(false);
   const [disableLogin, setDisableLogin] =  useState(false);
   const [threads, setThreads] = useState([]);
-
+  const [config, setConfig] = useState(null)
   const eventChats = async () => {
     const web3 = new Web3(window.web3.currentProvider || 'https://mainnet.infura.io/v3/f1c6706dd83740aba51f22b053cb6759');
     setWeb3(web3);
     const contract = DeployerAddress[0];
     const name = 'local/living';
 
-    const deployer = getDeployerContract(web3, contract);
-    const events = await getEvents(deployer, 4);
+    const configurator = initWearerKickback(web3, contract, name);
+    setConfig(configurator);
+
+    const events = await getEvents(configurator, 4);
 
     setThreads(events)
 
@@ -285,6 +287,7 @@ function App(props) {
                 isReady={isAppReady}
                 box={box}
                 web3={web3}
+                config={config}
               />
             )}
           />
@@ -300,6 +303,7 @@ function App(props) {
               space={chatSpace}
               web3={web3}
               box={box}
+              config={config}
             />}
           />
 

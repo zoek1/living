@@ -52,13 +52,14 @@ class Chat extends Component {
     const {
       address,
       web3,
+      config
     } = this.props;
     const thread = this.props.location.state.thread
     if (!web3 || !address || !thread.abi) return;
     console.log(this.props)
 
-    const eventContract = new web3.eth.Contract(thread.abi, thread.address);
-    const canPost = await isMember(eventContract, address);
+    const eventContract = config.eventContract(thread.address);
+    const canPost = await isMember(eventContract, address, config);
     if (canPost !== this.state.canPost) {
       this.setState({
         canPost
@@ -70,13 +71,14 @@ class Chat extends Component {
     const {
       address,
       web3,
+      config,
     } = this.props;
     const thread = this.props.location.state.thread
-    if (!web3 || !address || !thread.abi) return;
+    if (config) return;
     console.log(this.props)
 
-    const eventContract = new web3.eth.Contract(thread.abi, thread.address);
-    const canPost = await isMember(eventContract, address);
+    const eventContract = config.eventContract(thread.address);
+    const canPost = await isMember(eventContract, address, config);
     if (canPost !== this.state.canPost) {
       this.setState({
         canPost
@@ -91,6 +93,7 @@ class Chat extends Component {
       profile,
       space,
       history,
+      config,
     } = this.props;
 
     if (this.props.location.state === undefined) {
@@ -118,7 +121,7 @@ class Chat extends Component {
                 <CardContent style={{paddingRight: '15px', paddingLeft: '15px'}}>
                   <ThreeBoxComments
                     // required
-                    spaceName={space._name}
+                    spaceName={config.spaceName}
                     threadName={thread.address}
                     adminEthAddr={thread.admin}
                     firstModerator={thread.admin}

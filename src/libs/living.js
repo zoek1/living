@@ -6,21 +6,12 @@ import Box from '3box';
 const DeployerJSON =  require('../abis/Deployer.json');
 const PartyJSON = require('../abis/Party.json');
 
-
-export const getDeployerContract = (web3, address) => {
-  return new web3.eth.Contract(DeployerJSON, address)
-}
-
-export const getPartyContract = (web3, address) => {
-  return new web3.eth.Contract(PartyJSON, address)
-}
-
 export const getUniqueAddress = async (thread) => {
   const posts = await thread.getPosts();
   const DIDs = [...new Set(posts.map(x => x.author))];
   return Promise.all(DIDs.map(async (did) => (await resolve(did)).publicKey[2].ethereumAddress))
-
 }
+
 
 export const openBox = async (ethereum) => {
   if (!ethereum) console.error('You must provide an ethereum object to the comments component.');
@@ -39,6 +30,25 @@ export const openSpace = async (name, box) => {
   return space;
 }
 
+export const activeThread = async (space, adminAddress) => {
+  const spaces = await Box.listSpaces(adminAddress);
+  if (!spaces.includes(space._name)) {
+    console.log(adminAddress)
+    console.log('Admin needs to create the room')
+    return false;
+  }
+
+  return true;
+}
+
+// Dependent structure
+export const getDeployerContract = (web3, address) => {
+  return new web3.eth.Contract(DeployerJSON, address)
+}
+
+export const getPartyContract = (web3, address) => {
+  return new web3.eth.Contract(PartyJSON, address)
+}
 
 export const DeployerAddress  =  {
   "0": "0x3361aa92E426E052141Daf9e41A09d36e994Ba23",
@@ -134,41 +144,49 @@ export const getEventInfo = async (partyAddress) =>  await fetch('https://live.a
           }`})
 });
 
-export const getEvents = async (contract, limit=0, fromBlock=0, toBlock='latest') => {
-  const events = await contract.getPastEvents('NewParty', {fromBlock: fromBlock, to: toBlock})
+export const populateEvents = async (event) =>  {
+  console.log(event)
+  const partyAddress = event.returnValues.deployedAddress;
+  const getInfo = await getEventInfo(partyAddress);
+  const data = await getInfo.json();
 
-  return Promise.all(events.slice(0, limit).map(async (event) =>  {
-    console.log(event)
-    const partyAddress = event.returnValues.deployedAddress;
-    const getInfo = await getEventInfo(partyAddress);
-    const data = await getInfo.json();
-
-    return {
-      'address': partyAddress,
-      'data': {...data.data.party,
-        abi: PartyJSON,
-        admin: '0xed628E601012cC6Fd57Dc0cede2A527cdc86A221', //event.returnValues.deployer
-      },
-
-    }
-  }))
-}
-
-
-export const isMember = async (contract, address) => !(await contract.methods.isRegistered(address).call());
-export const activeThread = async (space, adminAddress) => {
-  const spaces = await Box.listSpaces(adminAddress);
-  if (!spaces.includes(space._name)) {
-    console.log(adminAddress)
-    console.log('Admin needs to create the room')
-    return false;
+  return {
+    'address': partyAddress,
+    'data': {...data.data.party,
+      abi: PartyJSON,
+      admin: '0xed628E601012cC6Fd57Dc0cede2A527cdc86A221', //event.returnValues.deployer
+    },
   }
-
-  return true;
 }
 
-export const joinThread = async (contract, address, name, space, adminAddress) => {
-  const isMemmber = await isMember(contract, address)
+
+// Contract Specific
+export const initWearerKickback = (web3, address, spaceName) => {
+  return {
+    mainContract: getDeployerContract(web3, address),
+    eventContract: (address) => getPartyContract(web3, address),
+    searchEvent: 'NewParty',
+    isMember: 'isRegistered',
+    spaceName: spaceName,
+    populate: populateEvents,
+  }
+}
+
+export const getEvents = async (config, limit=0, fromBlock=0, toBlock='latest') => {
+  const contract =  config.mainContract;
+  const events = await contract.getPastEvents(config.eventContract, {fromBlock: fromBlock, to: toBlock})
+
+  return Promise.all(events.slice(0, limit).map(config.populate))
+}
+
+
+export const isMember = async (contract, address, config) => {
+  return !(await contract.methods[config.isMember](address).call());
+}
+
+
+export const joinThread = async (contract, address, name, space, adminAddress, config) => {
+  const isMemmber = await isMember(contract, address, config)
 
   if (!(await activeThread(space, adminAddress))) {
     console.log(adminAddress)
