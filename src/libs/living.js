@@ -1,5 +1,3 @@
-import * as axios from "axios";
-import web3 from 'web3';
 import resolve from 'did-resolver';
 import Box from '3box';
 
@@ -183,7 +181,7 @@ export const populateEvents = async (event) =>  {
     'address': partyAddress,
     'data': {...data.data.party,
       abi: PartyJSON,
-      admin: '0xed628E601012cC6Fd57Dc0cede2A527cdc86A221', //event.returnValues.deployer
+      admin:  event.returnValues.deployer
     },
   }
 }
@@ -196,7 +194,7 @@ export const populateProposals = async (event) => {
   const restructureInfo = {
     id: response[0],
     address: event.address,
-    admin: '0xed628E601012cC6Fd57Dc0cede2A527cdc86A221' //response[1]
+    admin: response[1]
   }
 
   if (typeof details == "string") {
@@ -223,7 +221,7 @@ export const initWearerKickback = (web3, address, spaceName) => {
     isMember: 'isRegistered',
     spaceName: spaceName,
     populate: populateEvents,
-    memberPredicate: (member) => !member
+    memberPredicate: (member) => member
   }
 }
 
@@ -235,13 +233,12 @@ export const initMoloch = (web3, address, spaceName) => {
     isMember: 'members',
     spaceName: spaceName,
     populate: populateProposals,
-    memberPredicate: (member) => !member[2]
+    memberPredicate: (member) => member[2]
   }
 }
 
 export const getEvents = async (config, limit=0, fromBlock=0, toBlock='latest') => {
   const contract =  config.mainContract;
-  console.log(contract)
   const events = await contract.getPastEvents(config.searchEvent, {fromBlock: fromBlock, to: toBlock})
 
   return Promise.all(events.slice(0, limit).map(config.populate))
@@ -249,7 +246,6 @@ export const getEvents = async (config, limit=0, fromBlock=0, toBlock='latest') 
 
 
 export const isMember = async (contract, address, config) => {
-  console.log(contract)
   const response = await contract.methods[config.isMember](address).call()
   if (config.memberPredicate) {
     return config.memberPredicate(response)
@@ -271,7 +267,6 @@ export const joinThread = async (contract, address, name, space, adminAddress, c
       firstModerator: adminAddress,
     }));
 
-    console.log(thread)
     if (isMemmber.returnValues) {
       console.log('====== SUBSCRIBE')
       space.subscribeThread(thread.address, {

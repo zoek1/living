@@ -1,19 +1,14 @@
 import React, { Component } from 'react';
 
 import '../styles/index.css';
-import ThreeBoxComments from "../libs/3box-comments-react/src/index";
+import ThreeBoxComments from "./3BoxPluginWrapper";
 import {withRouter} from "react-router-dom";
 import Typography from "@material-ui/core/Typography";
 import Grid from "@material-ui/core/Grid";
 import CardContent from "@material-ui/core/CardContent";
 import Card from "@material-ui/core/Card";
 import {isMember} from "../libs/living";
-
-
-const canPost = () => {
-  console.log('No allowed to post')
-  return true;
-};
+import ReactMarkdown from "react-markdown";
 
 
 const styles = {
@@ -56,7 +51,6 @@ class Chat extends Component {
     } = this.props;
     const thread = this.props.location.state.thread
     if (!web3 || !address || !config) return;
-    console.log(this.props)
 
     const eventContract = config.eventContract(thread.address);
     const canPost = await isMember(eventContract, address, config);
@@ -75,7 +69,6 @@ class Chat extends Component {
     } = this.props;
     const thread = this.props.location.state.thread
     if (!web3 || !address || !config) return;
-    console.log(this.props)
 
     const eventContract = config.eventContract(thread.address);
     const canPost = await isMember(eventContract, address, config);
@@ -103,16 +96,15 @@ class Chat extends Component {
 
     const thread = this.props.location.state.thread
     console.log(`CHAT: ${thread.address}`);
-    console.log(this.props.location.state.thread);
-
 
     return (
       <>
-        <Grid container>
-          <Grid item xs={12} md={4} style={{paddingLeft: '10px', paddingRight: '10px',}}>
+        <Grid container justify='center'>
+          <Grid item xs={8} style={{paddingLeft: '10px', paddingRight: '10px',}}>
             <Card>
-              <CardContent>
+              <CardContent style={{textAlign: "left", paddingLeft: '5%', paddingRight: '5%'}}>
                 <Typography component="h1" style={styles.title}>{thread.name}</Typography>
+                { thread.description ? <ReactMarkdown source={thread.description}/> : ''}
               </CardContent>
             </Card>
             {space && space._name &&
