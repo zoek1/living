@@ -1,6 +1,8 @@
 # living
 Living room for contract events
 
+DEMO:  https://www.loom.com/share/c5dadd61de6b46bebb7e3ba62be9afb6
+
 
 ## Instructions
 
