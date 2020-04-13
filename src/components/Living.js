@@ -63,16 +63,23 @@ const Living = (props) => {
 
   const subscribeThread = async (data) => {
     try {
-      const PartyContract = config.eventContract(data.address)
+      // 5. Wire the event contract to allow query is the user is memeber, can post or exists the thread.
+      const EventContract = config.eventContract(data.address)
       const addresses = await window.ethereum.enable();
       const currentUserAddr = addresses[0];
-      const thread = await joinThread(PartyContract, currentUserAddr, data.address, space, data.admin, config);
 
+      const thread = await joinThread(EventContract, currentUserAddr, data.address, space, data.admin, config);
+      // If the thread is different of null means the user is member and the admin has joined the thread
+      // and joined the thread previously.
+      // To create the thread the admin needs to join the space created previously and optional join the thread.
+      // This is required to avoid give access to users that doesn't allow the space.
       if (thread) {
         console.log('========== Address')
+        // 6. With the thread is posible retrieve all users address that commented in this thread.
         console.log(await getUniqueAddress(thread))
       }
 
+      // 7. Go to Chat.js
       goToThread(data)
     } catch (e) {
       console.log(e)

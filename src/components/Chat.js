@@ -51,7 +51,7 @@ class Chat extends Component {
     } = this.props;
     const thread = this.props.location.state.thread
     if (!web3 || !address || !config) return;
-
+    // 8. Validate if the user can post to the current thread
     const eventContract = config.eventContract(thread.address);
     const canPost = await isMember(eventContract, address, config);
     if (canPost !== this.state.canPost) {
@@ -72,6 +72,7 @@ class Chat extends Component {
 
     const eventContract = config.eventContract(thread.address);
     const canPost = await isMember(eventContract, address, config);
+
     if (canPost !== this.state.canPost) {
       this.setState({
         canPost
@@ -111,8 +112,11 @@ class Chat extends Component {
             <Grid container  style={{marginTop: '20px'}}>
               <Card>
                 <CardContent style={{paddingRight: '15px', paddingLeft: '15px'}}>
+                  {/*
+                    9. Use Custom Box comment, this allow validate if the current user can post to the thread
+                  */}
                   <ThreeBoxComments
-                    // required
+                    // Required
                     spaceName={config.spaceName}
                     threadName={thread.address}
                     adminEthAddr={thread.admin}

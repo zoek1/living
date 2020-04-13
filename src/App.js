@@ -18,13 +18,13 @@ import {shortenEthAddr} from "3box-comments-react/lib/utils";
 import CircularProgress from "@material-ui/core/CircularProgress";
 
 import {
-  DeployerAddress,
-  getEvents,
+  DeployerAddress, getDeployerContract,
+  getEvents, getPartyContract,
   initMoloch,
   initWearerKickback,
   MolochAddress,
   openBox,
-  openSpace
+  openSpace, populateEvents
 } from "./libs/living";
 import Living from "./components/Living";
 const Web3 = require('web3')
@@ -46,20 +46,49 @@ function App(props) {
 
   const handleLogin = async () => {
     setDisableLogin(true);
-
+    // 1. Setup web3 to retrieve 3box thread and profiles
     const web3 = new Web3(window.web3.currentProvider || 'https://mainnet.infura.io/v3/f1c6706dd83740aba51f22b053cb6759');
     setWeb3(web3);
 
+    // 2. Set the network and the space name. The posts and comments will depend on this configurations
+    //    due such elements reside on given space and network
     const molochContractAddress = MolochAddress["0"]
     const deployerContractAddress = DeployerAddress[0];
     const name = 'local/living';
 
+    /* 3. Get the configurations to interact witht the given events provider
+        Here the contracts, connections and mappers are populated
+
+        {
+          mainContract: Emitter of the events,
+          eventContract: Allows us to know the admin, if the user is member and details,
+          searchEvent:  Configure the event to query on the `mainContract` like 'NewParty',
+          isMember: Configure the method name to check if the user is member like 'isRegistered',
+          spaceName: Configure where the chats will be stored,
+          populate: Allow structure event into required structure and add additional info,
+            Required structure {
+               'address': Identify the address of the contract
+               'data': {
+                 address: Identify the event
+                 id: Identify the event
+                 admin: Indicate who needs to create the chat for each event
+
+                 // Only required in this demo
+                 name
+                 description
+               },
+          }
+          memberPredicate: Allow customize the isMember in case the output of `isMember` call isn't a boolean type
+        }
+    */
     const configurator = initMoloch(web3, molochContractAddress, name);
     // const configurator = initWearerKickback(web3, deployerContractAddress, name);
     setConfig(configurator);
 
+    // 4. Based on previous configurations, retrieve the parties or proposals
     const events = await getEvents(configurator, 4);
 
+    // 5. Go to Living.js
     setThreads(events)
 
     if (typeof window.ethereum !== 'undefined') {
