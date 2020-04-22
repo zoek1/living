@@ -81,12 +81,12 @@ function App(props) {
           memberPredicate: Allow customize the isMember in case the output of `isMember` call isn't a boolean type
         }
     */
-    const configurator = initMoloch(web3, molochContractAddress, name);
-    // const configurator = initWearerKickback(web3, deployerContractAddress, name);
+    //const configurator = initMoloch(web3, molochContractAddress, name);
+    const configurator = initWearerKickback(web3, deployerContractAddress, name);
     setConfig(configurator);
 
     // 4. Based on previous configurations, retrieve the parties or proposals
-    const events = await getEvents(configurator, 4);
+    const events = await getEvents(configurator, 20);
 
     // 5. Go to Living.js
     setThreads(events)
